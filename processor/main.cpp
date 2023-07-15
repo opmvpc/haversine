@@ -70,7 +70,6 @@ struct Value
         }
     }
 
-    // [] operator
     Value &operator[](int index)
     {
         if (type == OBJECT)
@@ -111,7 +110,7 @@ struct Json
     Value value;
     ~Json()
     {
-        // delete everything
+        deleteRecursive(value);
     }
 
     int size()
@@ -127,6 +126,30 @@ struct Json
         else
         {
             throw std::runtime_error("Not an array or object");
+        }
+    }
+
+    void deleteRecursive(Value &value)
+    {
+        if (value.type == Value::OBJECT)
+        {
+            for (int i = 0; i < value.object->members.getSize(); i++)
+            {
+                deleteRecursive(value.object->members[i].value);
+            }
+            delete value.object;
+        }
+        else if (value.type == Value::ARRAY)
+        {
+            for (int i = 0; i < value.array->values.getSize(); i++)
+            {
+                deleteRecursive(value.array->values[i]);
+            }
+            delete value.array;
+        }
+        else if (value.type == Value::STRING)
+        {
+            delete[] value.string;
         }
     }
 
