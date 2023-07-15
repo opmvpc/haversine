@@ -190,20 +190,42 @@ struct Json
 
 Json parse(const char *inputFileName)
 {
-    FILE *inputFile = fopen(inputFileName, "rb");
-    fseek(inputFile, 0, SEEK_END);
-    long inputFileSize = ftell(inputFile);
-    fseek(inputFile, 0, SEEK_SET);
-    char *inputFileBuffer = new char[inputFileSize];
-    fread(inputFileBuffer, 1, inputFileSize, inputFile);
-
     Json json = Json();
+    
+    try
+    {
+        // Open input file
+        FILE *inputFile = fopen(inputFileName, "rb");
+        if (!inputFile)
+        {
+            throw std::runtime_error("Failed to open input file.");
+        }
 
-    int current = 0;
-    json.value = getElement(inputFileBuffer, &current);
+        // Get the file size
+        fseek(inputFile, 0, SEEK_END);
+        long inputFileSize = ftell(inputFile);
+        fseek(inputFile, 0, SEEK_SET);
 
-    delete[] inputFileBuffer;
-    fclose(inputFile);
+        // Create a buffer to hold the file contents
+        char *inputFileBuffer = new char[inputFileSize];
+
+        // Read the file into the buffer
+        size_t bytesRead = fread(inputFileBuffer, 1, inputFileSize, inputFile);
+        if (bytesRead != inputFileSize)
+        {
+            throw std::runtime_error("Failed to read input file.");
+        }
+
+        int current = 0;
+        json.value = getElement(inputFileBuffer, &current);
+
+        delete[] inputFileBuffer;
+        fclose(inputFile);
+    }
+    catch (const std::exception &e)
+    {
+        std::cout << "Exception occurred: " << e.what() << std::endl;
+    }
 
     return json;
 }
