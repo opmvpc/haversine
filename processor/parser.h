@@ -16,7 +16,7 @@ char peak(char *buffer, int *current);
 char nextPeak(char *buffer, int *current);
 Value getElement(char *buffer, int *current);
 Value getValue(char *buffer, int *current);
-void clearWhitespace(char *buffer, int *current);
+void escapeWhitespaces(char *buffer, int *current);
 Object *getObject(char *buffer, int *current);
 void getMembers(char *buffer, int *current, ArrayList<Member> *members);
 Member getMember(char *buffer, int *current);
@@ -225,9 +225,9 @@ char nextPeak(char *buffer, int *current)
 
 Value getElement(char *buffer, int *current)
 {
-    clearWhitespace(buffer, current);
+    escapeWhitespaces(buffer, current);
     Value value = getValue(buffer, current);
-    clearWhitespace(buffer, current);
+    escapeWhitespaces(buffer, current);
 
     return value;
 }
@@ -240,15 +240,15 @@ Value getValue(char *buffer, int *current)
     {
     case '{':
         value.type = Value::OBJECT;
-        clearWhitespace(buffer, current);
+        escapeWhitespaces(buffer, current);
         value.object = getObject(buffer, current);
-        clearWhitespace(buffer, current);
+        escapeWhitespaces(buffer, current);
         break;
     case '[':
         value.type = Value::ARRAY;
-        clearWhitespace(buffer, current);
+        escapeWhitespaces(buffer, current);
         value.array = getArray(buffer, current);
-        clearWhitespace(buffer, current);
+        escapeWhitespaces(buffer, current);
         break;
     case '"':
     {
@@ -292,7 +292,7 @@ Value getValue(char *buffer, int *current)
     return value;
 }
 
-void clearWhitespace(char *buffer, int *current)
+void escapeWhitespaces(char *buffer, int *current)
 {
     char c = next(buffer, current);
     while (c == ' ' || c == '\n' || c == '\t' || c == '\r')
@@ -305,7 +305,7 @@ void clearWhitespace(char *buffer, int *current)
 Object *getObject(char *buffer, int *current)
 {
     Object *object = new Object();
-    clearWhitespace(buffer, current);
+    escapeWhitespaces(buffer, current);
     if (peak(buffer, current) == '}')
     {
         next(buffer, current);
@@ -336,14 +336,14 @@ void getMembers(char *buffer, int *current, ArrayList<Member> *members)
 Member getMember(char *buffer, int *current)
 {
     Member member = Member();
-    clearWhitespace(buffer, current);
+    escapeWhitespaces(buffer, current);
     char c = next(buffer, current);
     if (c != '"')
     {
         throw std::runtime_error("Expected '\"'");
     }
     member.name = getString(buffer, current);
-    clearWhitespace(buffer, current);
+    escapeWhitespaces(buffer, current);
     c = next(buffer, current);
     if (c != ':')
     {
@@ -379,7 +379,7 @@ char *getString(char *buffer, int *current)
 Array *getArray(char *buffer, int *current)
 {
     Array *array = new Array();
-    clearWhitespace(buffer, current);
+    escapeWhitespaces(buffer, current);
     if (peak(buffer, current) == ']')
     {
         next(buffer, current);
@@ -388,7 +388,7 @@ Array *getArray(char *buffer, int *current)
 
     getValues(buffer, current, &array->values);
 
-    clearWhitespace(buffer, current);
+    escapeWhitespaces(buffer, current);
 
     if (peak(buffer, current) != ']')
     {
@@ -406,7 +406,7 @@ void getValues(char *buffer, int *current, ArrayList<Value> *values)
     if (peak(buffer, current) == ',')
     {
         next(buffer, current);
-        clearWhitespace(buffer, current);
+        escapeWhitespaces(buffer, current);
         getValues(buffer, current, values);
     }
 }
@@ -430,7 +430,7 @@ Value &getByName(ArrayList<Member> &elements, const char *name)
             return elements[i].value;
         }
     }
-    throw std::runtime_error("No such member");
+    throw std::runtime_error("No such member: \"" + std::string(name) + "\"");
 }
 
 bool isDigit(char c)
