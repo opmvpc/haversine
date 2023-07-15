@@ -3,7 +3,6 @@
 #include <string.h>
 #include <exception>
 
-struct Element;
 struct Json;
 struct Value;
 struct Object;
@@ -13,7 +12,7 @@ struct Array;
 char next(char *buffer, int *current);
 char peak(char *buffer, int *current);
 char nextPeak(char *buffer, int *current);
-Element getElement(char *buffer, int *current);
+Value getElement(char *buffer, int *current);
 Value getValue(char *buffer, int *current);
 void clearWhitespace(char *buffer, int *current);
 Object *getObject(char *buffer, int *current);
@@ -21,6 +20,19 @@ void getMembers(char *buffer, int *current, ArrayList<Member> *members);
 Member getMember(char *buffer, int *current);
 char *getString(char *buffer, int *current);
 Array *getArray(char *buffer, int *current);
+Value &getByIndex(ArrayList<Member> &elements, int index);
+Value &getByIndex(ArrayList<Value> &elements, int index);
+Value &getByName(ArrayList<Member> &elements, const char *name);
+
+struct Object
+{
+    ArrayList<Member> members;
+};
+
+struct Array
+{
+    ArrayList<Value> values;
+};
 
 struct Value
 {
@@ -41,37 +53,110 @@ struct Value
         double number;
         bool boolean;
     };
-};
 
-struct Element
-{
-    Value value;
-};
-
-struct Json
-{
-    Element element;
-    ~Json()
+    int size()
     {
-        // delete everything
-        
+        if (type == OBJECT)
+        {
+            return object->members.getSize();
+        }
+        else if (type == ARRAY)
+        {
+            return array->values.getSize();
+        }
+        else
+        {
+            throw std::runtime_error("Not an array or object");
+        }
     }
-};
 
-struct Object
-{
-    ArrayList<Member> members;
+    // [] operator
+    Value &operator[](int index)
+    {
+        if (type == OBJECT)
+        {
+            return getByIndex(object->members, index);
+        }
+        else if (type == ARRAY)
+        {
+            return getByIndex(array->values, index);
+        }
+        else
+        {
+            throw std::runtime_error("Not an array or object");
+        }
+    }
+
+    Value &operator[](const char *name)
+    {
+        if (type == OBJECT)
+        {
+            return getByName(object->members, name);
+        }
+        else
+        {
+            throw std::runtime_error("Not an object");
+        }
+    }
 };
 
 struct Member
 {
     char *name;
-    Element element;
+    Value value;
 };
 
-struct Array
+struct Json
 {
-    ArrayList<Element> elements;
+    Value value;
+    ~Json()
+    {
+        // delete everything
+    }
+
+    int size()
+    {
+        if (value.type == Value::OBJECT)
+        {
+            return value.object->members.getSize();
+        }
+        else if (value.type == Value::ARRAY)
+        {
+            return value.array->values.getSize();
+        }
+        else
+        {
+            throw std::runtime_error("Not an array or object");
+        }
+    }
+
+    Value &operator[](int index)
+    {
+        if (value.type == Value::OBJECT)
+        {
+            return getByIndex(value.object->members, index);
+        }
+        else if (value.type == Value::ARRAY)
+        {
+            return getByIndex(value.array->values, index);
+        }
+        else
+        {
+            throw std::runtime_error("Not an array or object");
+        }
+    }
+
+    Value &operator[](const char *name)
+    {
+        if (value.type == Value::OBJECT)
+        {
+            return getByName(value.object->members, name);
+        }
+        else
+        {
+            throw std::runtime_error("Not an object");
+        }
+    }
 };
 
 int main(int argc, char const *argv[])
@@ -99,15 +184,14 @@ int main(int argc, char const *argv[])
 
     Json json = Json();
 
-    json.element = getElement(inputFileBuffer, &current);
+    json.value = getElement(inputFileBuffer, &current);
 
-    printf("%s\n", json.element.value.object->members[0].name);
-    printf("¨%d\n", json.element.value.object->members[0].element.value.object->members.getSize());
-    printf("%s\n", json.element.value.object->members[0].element.value.object->members[0].name);
-    printf("%s\n", json.element.value.object->members[0].element.value.object->members[0].element.value.string);
-    printf("%s\n", json.element.value.object->members[0].element.value.object->members[1].name);
-    printf("%s\n", json.element.value.object->members[0].element.value.object->members[2].name);
-    printf("%d\n", json.element.value.object->members[0].element.value.object->members[2].element.value.object->members.getSize());
+    printf("%s\n", json[0][0].string);
+    printf("%d\n", json[0].size());
+    printf("%d\n", json[0][2].size());
+    printf("%s\n", json["hello"]["coucou"].string);
+    printf("%d\n", json["hello"]["sava"].size());
+    printf("%d\n", json["hello"]["salut"].size());
 
     return 0;
 }
@@ -127,15 +211,13 @@ char nextPeak(char *buffer, int *current)
     return buffer[*current + 1];
 }
 
-Element getElement(char *buffer, int *current)
+Value getElement(char *buffer, int *current)
 {
-    Element element = Element();
     clearWhitespace(buffer, current);
     Value value = getValue(buffer, current);
-    element.value = value;
     clearWhitespace(buffer, current);
 
-    return element;
+    return value;
 }
 
 Value getValue(char *buffer, int *current)
@@ -221,7 +303,7 @@ Member getMember(char *buffer, int *current)
     {
         throw std::runtime_error("Expected ':'");
     }
-    member.element = getElement(buffer, current);
+    member.value = getElement(buffer, current);
 
     return member;
 }
@@ -252,4 +334,26 @@ Array *getArray(char *buffer, int *current)
 {
     Array *array = new Array();
     return array;
+}
+
+Value &getByIndex(ArrayList<Member> &elements, int index)
+{
+    return elements[index].value;
+}
+
+Value &getByIndex(ArrayList<Value> &elements, int index)
+{
+    return elements[index];
+}
+
+Value &getByName(ArrayList<Member> &elements, const char *name)
+{
+    for (int i = 0; i < elements.getSize(); i++)
+    {
+        if (strcmp(elements[i].name, name) == 0)
+        {
+            return elements[i].value;
+        }
+    }
+    throw std::runtime_error("No such member");
 }

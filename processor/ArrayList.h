@@ -60,4 +60,7 @@ public:
     {
         return size;
     }
+
+    ArrayList &operator=(const ArrayList &other) = delete;
+    ArrayList(const ArrayList &other) = delete;
 };
