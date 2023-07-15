@@ -1,0 +1,4 @@
+.vscode
+coordinates*.json
+results*.f64
+haversine_generator
