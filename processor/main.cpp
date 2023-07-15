@@ -21,6 +21,15 @@ int main(int argc, char const *argv[])
     printf("%s\n", json["hello"]["coucou"].string);
     printf("%d\n", json["hello"]["sava"].size());
     printf("%d\n", json["hello"]["salut"].size());
+    printf("%s\n", json["array"][0][0].string);
+    printf("%s\n", json["array"][0][1].string);
+    printf("%s\n", json["array"][0][2].string);
+    printf("%s\n", json["array"][1][0].string);
+    printf("%s\n", json["array"][1][1].string);
+    printf("%s\n", json["array"][1][2].string);
+    printf("%d\n", json["true"].boolean);
+    printf("%d\n", json["false"].boolean);
+    printf("%d\n", json["null"].null);
 
     return 0;
 }

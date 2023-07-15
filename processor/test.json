@@ -3,5 +3,12 @@
     "coucou": "hadopire",
     "sava": {},
     "salut": {}
-  }
+  },
+  "array": [
+    ["a", "b", "c"],
+    ["d", "e", "f"]
+  ],
+  "true": "true",
+  "false": "false",
+  "null": "null"
 }

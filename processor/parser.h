@@ -20,6 +20,7 @@ void getMembers(char *buffer, int *current, ArrayList<Member> *members);
 Member getMember(char *buffer, int *current);
 char *getString(char *buffer, int *current);
 Array *getArray(char *buffer, int *current);
+void getValues(char *buffer, int *current, ArrayList<Value> *values);
 Value &getByIndex(ArrayList<Member> &elements, int index);
 Value &getByIndex(ArrayList<Value> &elements, int index);
 Value &getByName(ArrayList<Member> &elements, const char *name);
@@ -52,6 +53,7 @@ struct Value
         char *string;
         double number;
         bool boolean;
+        bool null;
     };
 
     int size()
@@ -184,7 +186,6 @@ struct Json
 
 Json parse(const char *inputFileName)
 {
-    // put everything in a buffer
     FILE *inputFile = fopen(inputFileName, "rb");
     fseek(inputFile, 0, SEEK_END);
     long inputFileSize = ftell(inputFile);
@@ -192,11 +193,9 @@ Json parse(const char *inputFileName)
     char *inputFileBuffer = new char[inputFileSize];
     fread(inputFileBuffer, 1, inputFileSize, inputFile);
 
-    int current = 0;
-    int start = 0;
-
     Json json = Json();
 
+    int current = 0;
     json.value = getElement(inputFileBuffer, &current);
 
     delete[] inputFileBuffer;
@@ -243,15 +242,39 @@ Value getValue(char *buffer, int *current)
         break;
     case '[':
         value.type = Value::ARRAY;
+        clearWhitespace(buffer, current);
         value.array = getArray(buffer, current);
+        clearWhitespace(buffer, current);
         break;
     case '"':
-        value.type = Value::STRING;
-        value.string = getString(buffer, current);
+    {
+        char *string = getString(buffer, current);
+        if (strcmp(string, "true") == 0)
+        {
+            value.type = Value::BOOLEAN;
+            value.boolean = true;
+        }
+        else if (strcmp(string, "false") == 0)
+        {
+            value.type = Value::BOOLEAN;
+            value.boolean = false;
+        }
+        else if (strcmp(string, "null") == 0)
+        {
+            value.type = Value::NULL_VALUE;
+            value.null = true;
+        }
+        else
+        {
+            value.type = Value::STRING;
+            value.string = string;
+        }
         break;
+    }
     default:
         break;
     }
+
     return value;
 }
 
@@ -342,7 +365,34 @@ char *getString(char *buffer, int *current)
 Array *getArray(char *buffer, int *current)
 {
     Array *array = new Array();
+    clearWhitespace(buffer, current);
+    if (peak(buffer, current) == ']')
+    {
+        next(buffer, current);
+        return array;
+    }
+
+    getValues(buffer, current, &array->values);
+
+    if (peak(buffer, current) != ']')
+    {
+        throw std::runtime_error("Expected ']'");
+    }
+
+    next(buffer, current);
+
     return array;
+}
+
+void getValues(char *buffer, int *current, ArrayList<Value> *values)
+{
+    values->add(getValue(buffer, current));
+    if (peak(buffer, current) == ',')
+    {
+        next(buffer, current);
+        clearWhitespace(buffer, current);
+        getValues(buffer, current, values);
+    }
 }
 
 Value &getByIndex(ArrayList<Member> &elements, int index)
