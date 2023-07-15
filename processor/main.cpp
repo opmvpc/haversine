@@ -30,6 +30,11 @@ int main(int argc, char const *argv[])
     printf("%d\n", json["true"].boolean);
     printf("%d\n", json["false"].boolean);
     printf("%d\n", json["null"].null);
+    printf("%f\n", json["numbers"][0].number);
+    printf("%f\n", json["numbers"][1].number);
+    printf("%f\n", json["numbers"][2].number);
+    printf("%f\n", json["numbers"][3].number);
+    printf("%.10f\n", json["numbers"][4].number);
 
     return 0;
 }

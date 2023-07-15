@@ -3,6 +3,8 @@
 #include <string.h>
 #include <exception>
 
+typedef double f64;
+
 struct Json;
 struct Value;
 struct Object;
@@ -24,6 +26,8 @@ void getValues(char *buffer, int *current, ArrayList<Value> *values);
 Value &getByIndex(ArrayList<Member> &elements, int index);
 Value &getByIndex(ArrayList<Value> &elements, int index);
 Value &getByName(ArrayList<Member> &elements, const char *name);
+bool isDigit(char c);
+f64 getNumber(char *buffer, int *current);
 
 struct Object
 {
@@ -51,7 +55,7 @@ struct Value
         Object *object;
         Array *array;
         char *string;
-        double number;
+        f64 number;
         bool boolean;
         bool null;
     };
@@ -272,6 +276,16 @@ Value getValue(char *buffer, int *current)
         break;
     }
     default:
+        if (isDigit(c))
+        {
+            value.type = Value::NUMBER;
+            value.number = getNumber(buffer, current);
+        }
+        else
+        {
+            throw std::runtime_error("Unexpected character");
+        }
+
         break;
     }
 
@@ -374,6 +388,8 @@ Array *getArray(char *buffer, int *current)
 
     getValues(buffer, current, &array->values);
 
+    clearWhitespace(buffer, current);
+
     if (peak(buffer, current) != ']')
     {
         throw std::runtime_error("Expected ']'");
@@ -415,4 +431,60 @@ Value &getByName(ArrayList<Member> &elements, const char *name)
         }
     }
     throw std::runtime_error("No such member");
+}
+
+bool isDigit(char c)
+{
+    return c == '-' || (c >= '0' && c <= '9');
+}
+
+f64 getNumber(char *buffer, int *current)
+{
+    (*current)--;
+    int start = *current;
+    char c = next(buffer, current);
+    while (isDigit(c))
+    {
+        c = next(buffer, current);
+    }
+    (*current)--;
+
+    if (peak(buffer, current) == '.')
+    {
+        next(buffer, current);
+        c = next(buffer, current);
+        while (isDigit(c))
+        {
+            c = next(buffer, current);
+        }
+        (*current)--;
+    }
+
+    if (peak(buffer, current) == 'e' || peak(buffer, current) == 'E')
+    {
+        next(buffer, current);
+        c = peak(buffer, current);
+        if (c == '+' || c == '-')
+        {
+            next(buffer, current);
+        }
+        c = next(buffer, current);
+        while (isDigit(c))
+        {
+            c = next(buffer, current);
+        }
+        (*current)--;
+    }
+
+    char *number = strncpy(new char[(*current) - (start) + 1], buffer + (start), (*current) - (start));
+    number[(*current) - (start)] = '\0';
+
+    try
+    {
+        return std::stod(number);
+    }
+    catch (const std::out_of_range &e)
+    {
+        throw std::runtime_error("Invalid number, too large : \"" + std::string(number) + "\"");
+    }
 }
