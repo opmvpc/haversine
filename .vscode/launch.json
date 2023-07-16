@@ -1,0 +1,41 @@
+{
+  "configurations": [
+    {
+      "name": "(gdb) Launch Processor",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/processor/haversine_processor",
+      "args": [
+        "storage/coordinates_cluster_383556_1000000.json",
+        "storage/results_cluster_383556_1000000.f64"
+      ],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "preLaunchTask": "C/C++: clang build processor"
+    },
+    {
+      "name": "(gdb) Test Processor",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/processor/test",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "preLaunchTask": "C/C++: clang test processor"
+    },
+    {
+      "name": "(gdb) Launch Generator",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/generator/haversine_generator",
+      "args": ["cluster", "1111111", "1000000"],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "preLaunchTask": "C/C++: clang build generator"
+    }
+  ],
+  "version": "2.0.0"
+}

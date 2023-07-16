@@ -2,6 +2,7 @@
 #include "ArrayList.h"
 #include <string.h>
 #include <exception>
+#include <charconv>
 
 typedef double f64;
 
@@ -186,12 +187,115 @@ struct Json
             throw std::runtime_error("Not an object");
         }
     }
+
+    char *print()
+    {
+        int indent = 0;
+        return printRecursive(value, &indent);
+    }
+
+    char *printRecursive(Value &value, int *indent)
+    {
+        char *buffer = new char[1024];
+
+        if (value.type == Value::OBJECT)
+        {
+
+            if (value.object->members.getSize() == 0)
+            {
+                buffer[0] = '{';
+                buffer[1] = '}';
+                buffer[2] = '\0';
+                return buffer;
+            }
+
+            buffer[0] = '{';
+            buffer[1] = '\n';
+            buffer[2] = '\0';
+            *indent += 1;
+
+            for (int i = 0; i < value.object->members.getSize(); i++)
+            {
+                for (int j = 0; j < *indent; j++)
+                {
+                    strcat(buffer, "    ");
+                }
+                strcat(buffer, "\"");
+                strcat(buffer, value.object->members[i].name);
+                strcat(buffer, "\"");
+
+                strcat(buffer, ": ");
+                strcat(buffer, printRecursive(value.object->members[i].value, indent));
+                if (i < value.object->members.getSize() - 1)
+                {
+                    strcat(buffer, ",\n");
+                }
+            }
+            *indent -= 1;
+            strcat(buffer, "\n");
+            for (int j = 0; j < *indent; j++)
+            {
+                strcat(buffer, "    ");
+            }
+            strcat(buffer, "}");
+            return buffer;
+        }
+        else if (value.type == Value::ARRAY)
+        {
+            buffer[0] = '[';
+            buffer[1] = '\0';
+            for (int i = 0; i < value.array->values.getSize(); i++)
+            {
+                strcat(buffer, printRecursive(value.array->values[i], indent));
+                if (i < value.array->values.getSize() - 1)
+                {
+                    strcat(buffer, ", ");
+                }
+            }
+            strcat(buffer, "]");
+            return buffer;
+        }
+        else if (value.type == Value::STRING)
+        {
+            buffer[0] = '"';
+            buffer[1] = '\0';
+            strcat(buffer, value.string);
+            strcat(buffer, "\"");
+            return buffer;
+        }
+        else if (value.type == Value::NUMBER)
+        {
+            sprintf(buffer, "%f", value.number);
+            return buffer;
+        }
+        else if (value.type == Value::BOOLEAN)
+        {
+            if (value.boolean)
+            {
+                strcpy(buffer, "true");
+            }
+            else
+            {
+                strcpy(buffer, "false");
+            }
+            return buffer;
+        }
+        else if (value.type == Value::NULL_VALUE)
+        {
+            strcpy(buffer, "null");
+            return buffer;
+        }
+        else
+        {
+            throw std::runtime_error("Unknown value type");
+        }
+    }
 };
 
 Json parse(const char *inputFileName)
 {
     Json json = Json();
-    
+
     try
     {
         // Open input file
@@ -498,15 +602,15 @@ f64 getNumber(char *buffer, int *current)
         (*current)--;
     }
 
-    char *number = strncpy(new char[(*current) - (start) + 1], buffer + (start), (*current) - (start));
-    number[(*current) - (start)] = '\0';
-
     try
     {
-        return std::stod(number);
+        double d;
+        std::from_chars(buffer + start, buffer + *current, d);
+        // return strtod(buffer + start, nullptr);
+        return d;
     }
     catch (const std::out_of_range &e)
     {
-        throw std::runtime_error("Invalid number, too large : \"" + std::string(number) + "\"");
+        // throw std::runtime_error("Invalid number, too large : \"" + std::string(number) + "\"");
     }
 }

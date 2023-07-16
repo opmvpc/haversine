@@ -59,6 +59,9 @@ int main(int argc, char const *argv[])
     assert(strcmp(json2["glossary"]["GlossDiv"]["GlossList"]["GlossEntry"]["GlossDef"]["GlossSeeAlso"][0].string, "GML") == 0);
     printf("\t✅ Can access to nested object\n");
 
+    printf("Testing Json printer...\n\n");
+    printf("%s", json.print());
+
     printf("\nAll tests passed 🎉\n");
 
     return 0;
