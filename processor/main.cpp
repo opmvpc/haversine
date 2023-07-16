@@ -1,5 +1,8 @@
 #include <stdio.h>
 #include "parser.h"
+#include "solver/solver.h"
+
+typedef double f64;
 
 int main(int argc, char const *argv[])
 {
@@ -13,33 +16,66 @@ int main(int argc, char const *argv[])
     const char *inputFileName = argv[1];
     const char *resultsFileName = argv[2];
 
+    // open the results file if provided
+    FILE *resultsFile = NULL;
+    char *resultsBuffer = NULL;
+    int resultsSize = 0;
+    if (resultsFileName)
+    {
+        resultsFile = fopen(resultsFileName, "rb");
+        // load the results in a buffer
+        fseek(resultsFile, 0, SEEK_END);
+        resultsSize = ftell(resultsFile);
+        fseek(resultsFile, 0, SEEK_SET);
+        resultsBuffer = new char[resultsSize];
+        fread(resultsBuffer, 1, resultsSize, resultsFile);
+        fclose(resultsFile);
+    }
+
     Json json = parse(inputFileName);
 
-    printf("%s\n", json["glossary"]["title"].string);
-    printf("%s\n", json["glossary"]["GlossDiv"]["title"].string);
-    printf("%s\n", json["glossary"]["GlossDiv"]["GlossList"]["GlossEntry"]["ID"].string);
-    printf("%s\n", json["glossary"]["GlossDiv"]["GlossList"]["GlossEntry"]["GlossDef"]["GlossSeeAlso"][0].string);
+    ArrayList<Value> &coordinates = json["pairs"].array->values;
+    f64 totalDistance = 0.0;
+    for (int i = 0; i < coordinates.getSize(); i++)
+    {
+        Value &coordinate = coordinates[i];
+        f64 x0 = coordinate["x0"].number;
+        f64 y0 = coordinate["y0"].number;
+        f64 x1 = coordinate["x1"].number;
+        f64 y1 = coordinate["y1"].number;
+        f64 distance = referenceHaversine(x0, y0, x1, y1, 6372.8);
+        totalDistance += distance;
 
-    // printf("%s\n", json[0][0].string);
-    // printf("%d\n", json[0].size());
-    // printf("%d\n", json[0][2].size());
-    // printf("%s\n", json["hello"]["coucou"].string);
-    // printf("%d\n", json["hello"]["sava"].size());
-    // printf("%d\n", json["hello"]["salut"].size());
-    // printf("%s\n", json["array"][0][0].string);
-    // printf("%s\n", json["array"][0][1].string);
-    // printf("%s\n", json["array"][0][2].string);
-    // printf("%s\n", json["array"][1][0].string);
-    // printf("%s\n", json["array"][1][1].string);
-    // printf("%s\n", json["array"][1][2].string);
-    // printf("%d\n", json["true"].boolean);
-    // printf("%d\n", json["false"].boolean);
-    // printf("%d\n", json["null"].null);
-    // printf("%f\n", json["numbers"][0].number);
-    // printf("%f\n", json["numbers"][1].number);
-    // printf("%f\n", json["numbers"][2].number);
-    // printf("%f\n", json["numbers"][3].number);
-    // printf("%.10f\n", json["numbers"][4].number);
+        // compare the results if provided
+        if (resultsSize > 0)
+        {
+            f64 result = *(f64 *)(resultsBuffer + i * sizeof(f64));
+            if (result != distance)
+            {
+                printf("Error: result %d is %.20f, expected %.20f\n", i, distance, result);
+            }
+        }
+    }
+
+    f64 averageDistance = totalDistance / coordinates.getSize();
+    printf("Total distance: %.20f\n", totalDistance);
+    printf("Average distance: %.20f\n", averageDistance);
+
+    // compare the results if provided
+    if (resultsSize > 0)
+    {
+        f64 result = *(f64 *)(resultsBuffer + coordinates.getSize() * sizeof(f64));
+        if (result != averageDistance)
+        {
+            printf("\nError: average distance is %.20f, expected %.20f\n", averageDistance, result);
+        }
+        else
+        {
+            printf("\nAverage distance is correct! ✨\n");
+        }
+
+        delete[] resultsBuffer;
+    }
 
     return 0;
 }

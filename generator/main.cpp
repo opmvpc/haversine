@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <random>
 #include <string.h>
-#include "solver.h"
+#include "solver/solver.h"
 #include <algorithm>
 
 int main(int argc, char const *argv[])
@@ -25,12 +25,12 @@ int main(int argc, char const *argv[])
 
     // create a json file
     char fileName[128];
-    sprintf(fileName, "coordinates_%s_%d_%d.json", mode, seed, pairsCount);
+    sprintf(fileName, "storage/coordinates_%s_%d_%d.json", mode, seed, pairsCount);
     FILE *jsonFile = fopen(fileName, "wb");
     fprintf(jsonFile, "{\"pairs\":[\n");
 
     // create a result file
-    sprintf(fileName, "results_%s_%d_%d.f64", mode, seed, pairsCount);
+    sprintf(fileName, "storage/results_%s_%d_%d.f64", mode, seed, pairsCount);
     FILE *resultFile = fopen(fileName, "wb");
 
     f64 totalDistance = 0.0;
