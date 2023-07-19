@@ -452,10 +452,11 @@ Object *getObject(char *buffer, int *current)
 void getMembers(char *buffer, int *current, ArrayList<Member> *members)
 {
     members->add(getMember(buffer, current));
-    if (peak(buffer, current) == ',')
+
+    while (peak(buffer, current) == ',')
     {
         next(buffer, current);
-        getMembers(buffer, current, members);
+        members->add(getMember(buffer, current));
     }
 }
 
@@ -529,11 +530,12 @@ Array *getArray(char *buffer, int *current)
 void getValues(char *buffer, int *current, ArrayList<Value> *values)
 {
     values->add(getValue(buffer, current));
-    if (peak(buffer, current) == ',')
+
+    while (peak(buffer, current) == ',')
     {
         next(buffer, current);
         escapeWhitespaces(buffer, current);
-        getValues(buffer, current, values);
+        values->add(getValue(buffer, current));
     }
 }
 
